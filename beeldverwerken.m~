@@ -37,13 +37,14 @@ function color = pixelValue(image,x,y,method)
     end
 end
 
-% Check if point is inside image 
+% check if point is inside image 
 function boolean = inImage(x1,y1,width,height)
     boolean = ((x1 <= width) && (y1 <= height) && (height > 1) && (width > 1));
 end
 
-% Profile
+
 function line = profile(image, x0, y0, x1, y1, n, method)
+    % profile of an image along straight line in n points
     x = linspace(x0, x1, n); 
     y = linspace(y0, y1, n);
     for i = 1:length(x)
@@ -51,5 +52,4 @@ function line = profile(image, x0, y0, x1, y1, n, method)
     end
 end
 
-% Rotation
 function rotatedImage = rotateImage(image, angle, method)
