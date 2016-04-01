@@ -1,5 +1,5 @@
 function beeldverwerken
-    pixelValue('kids.tif',127,50,'nearest')
+    pixelValue('kids.tif',,50,'nearest')
 end
 function color = pixelValue(image,x,y,method)
     im = imread(image);
@@ -22,10 +22,10 @@ function color = pixelValue(image,x,y,method)
                 +a*(1-b)*im(k+1,l);               
         end        
     else 
-        color = -1;
+        color = 0;
     end
 end
 
 function boolean = inImage(x1,y1,width,height)
-    boolean = ((x1 <= width) && (y1 <= height) && (height > 1) && (width > 1));
+    boolean = ((x1 < width) && (y1 < height) && (height > 1) && (width > 1));
 end
