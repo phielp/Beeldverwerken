@@ -53,3 +53,18 @@ end
 
 % Rotation
 function rotatedImage = rotateImage(image, angle, method)
+
+    % image size
+    [image_x, image_y] = size(image);
+
+    % center
+    c = [image_x; image_y] / 2;
+
+    % rotation matrix
+    R = [cos(-angle), -sin(-angle), t_1; 
+        sin(-angle), cos(-angle), t_2; 
+        0, 0, 1];
+
+
+    
+
