@@ -57,9 +57,7 @@ end
 
 % Rotation
 function rotatedImage = rotateImage(image, angle, method)
-     
     im = imread(image);
-    im = im2double(im);
 
     % image size
     [image_x, image_y] = size(im);
@@ -68,25 +66,13 @@ function rotatedImage = rotateImage(image, angle, method)
     c = [image_x; image_y] / 2;
 
     % rotation matrix
-%     R = [cos(-angle), -sin(-angle), c(1); 
-%         sin(-angle), cos(-angle), c(2); 
-%         0, 0, 1]
-
-    R = [cos(-angle), -sin(-angle);
-        sin(-angle), cos(-angle)];
+    R = [cos(-angle), -sin(-angle), c(1); 
+        sin(-angle), cos(-angle), c(2); 
+        0, 0, 1]
     
     for x = 1:image_x
-        for y = 1:image_y
-            
-            p = [x; y] - c;
-            p = R * p;
-            p = p + c;
-            
-            rotated_image(x, y) = pixelValue(image, p(1), p(2), method);
-            
-        end
-    end
-    imshow(rotated_image);
+        for y = 1:image
+       
 end
     
 
