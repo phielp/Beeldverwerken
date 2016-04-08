@@ -1,31 +1,171 @@
+% Main
 function beeldverwerken
-    pixelValue('kids.tif',,50,'nearest')
+    %imshow(rotateImage('cameraman.tif', 0, 'linear'));
+    im = imread('cameraman.tif');
+    im = im2double(im);
+    rotateImage(im, 30, 'nearest');
+    %imshow(rotated)
 end
-function color = pixelValue(image,x,y,method)
-    im = imread(image);
-    [height,width] = size(im);
-    if inImage(x,y,width,height)
-        switch(method)
-            case 'nearest'
-                nearestX = floor(x+0.5);
-                nearestY = floor(y+0.5);
-                color = im(nearestX,nearestY);
-                return;
-            case 'linear'
-                k = floor(x+0.5);
-                l = floor(y+0.5);
-                a = x-k;
-                b = y-l;
-                color = (1-a)*(1-b)*im(k,l)...
-                +(1-a)*b*im(k,l+1)...
-                +a*b*im(k+1,l+1)...
-                +a*(1-b)*im(k+1,l);               
-        end        
-    else 
-        color = 0;
+
+function interpolationPlot
+    a = imread('autumn.tif');
+    a = im2double(rgb2gray(a));
+    n = 100;
+    reset(gcf);
+    hold on;
+    plot(profile(a, 100, 100, 120, 120, n, 'linear'), 'b');
+    plot(profile(a, 100, 100, 120, 120, n, 'nearest'), 'r');
+    hold off;
+end
+
+% Interpolation
+
+% Check if point is inside image 
+function boolean = inImage(x1,y1,width,height)
+    boolean = ((x1 <= width) && (y1 <= height) && (height > 1) && (width > 1));
+end
+
+% Profile
+function line = profile(image, x0, y0, x1, y1, n, method)
+    x = linspace(x0, x1, n); 
+    y = linspace(y0, y1, n);
+    for i = 1:length(x)
+        line(i) = pixelValue(image, x(i), y(i), method);
     end
 end
 
-function boolean = inImage(x1,y1,width,height)
-    boolean = ((x1 < width) && (y1 < height) && (height > 1) && (width > 1));
+function color = pixelValue( image, x, y, method )
+% pixel value at real coordinates
+
+if inImage( size(image) ,x,y ) == 1
+    Size = size(image);
+    xsize = Size(1,1);
+    ysize = Size(1,2);
+
+    if x > xsize
+        x = xsize;
+    end
+    if y > ysize
+        y = ysize;
+    end
+    if x < 1
+        color = 0;
+        return ;
+    end
+    if y < 1
+        color = 0;
+        return ;
+    end
+    % do the interpolation
+    switch ( method )
+        case 'nearest'
+            % Do nearest neighbour
+            nearestX = floor(x + 0.5);
+            nearestY = floor(y + 0.5);
+            color = image(nearestX, nearestY);
+            return ;
+        case 'linear'
+            % Do bilinear interpolation
+            a = y - floor(y);
+            b = x - floor(x);
+            ul = image(floor(x), floor(y));
+            ll = image(ceil(x), floor(y));
+            ur = image(floor(x), ceil(y));
+            lr = image(ceil(x), ceil(y));
+            color = ((1-a)*(1-b)*ul)+((1-a)*b*ll)+(a*(1-b)*ur)+ a*b*lr;
+            return ;
+           
+    end %end switch
+else
+    Size = size(image);
+    xsize = Size(1,1);
+    ysize = Size(1,2);
+
+    if x > xsize
+        x = xsize;
+    end
+    if y > ysize
+        y = ysize;
+    end
+    if x < 1
+        color = 0;
+        return ;
+    end
+    if y < 1
+        color = 0;
+        return ;
+    end
+       
+    switch ( method )
+        case 'nearest'
+            % Do nearest neighbour
+            nearestX = floor(x + 0.5);
+            nearestY = floor(y + 0.5);
+            color = image(nearestX, nearestY);
+            return ;
+        case 'linear'
+            % Do bilinear interpolation
+            a = y - floor(y);
+            b = x - floor(x);
+            ul = image(floor(x), floor(y));
+            ll = image(ceil(x), floor(y));
+            ur = image(floor(x), ceil(y));
+            lr = image(ceil(x), ceil(y));
+            color = ((1-a)*(1-b)*ul)+((1-a)*b*ll)+(a*(1-b)*ur)+ a*b*lr;
+            return ;
+    end
+end
+end
+function rotatedImage = rotateImage (image , angle , method)
+image = im2double(image);
+imageSize = size(image);
+xsize = imageSize(1,1);
+ysize = imageSize(1,2);
+
+% Create the necessary rotation matrix
+Heen = [1,0,(xsize/2);0,1,(ysize/2);0,0,1]
+R = [cos(angle), -sin(angle), 0; sin(angle), cos(angle), 0; 0, 0, 1]
+Terug = inv(Heen)%[1,0,-(ysize/2);0,1,-(xsize/2);0,0,1]
+RBM = Heen * R * Terug
+
+% Obtain indices needed for interpolation
+
+[X, Y] = meshgrid(1:xsize, 1:ysize);
+indices = [Y(:), X(:)];
+indices = indices';
+indexAppend = ones(1,length(indices));
+
+indices = [indices;indexAppend];
+% Obtain colors for the whole rotatedImage matrix
+% using the specified interpolation method
+rotatedIndices = RBM * indices;
+for i = 1:length(rotatedIndices)
+   if rotatedIndices(2, i) <= ysize && rotatedIndices(1, i) <= xsize
+       color(i) = pixelValue(image, rotatedIndices(1, i), rotatedIndices(2,i), method);
+   else
+       color(i) = 0;
+   end
+end
+
+rotatedImage = reshape(color,ysize,xsize);
+imshow(rotatedImage);
+end
+    
+function number = inImage( Size, x, y  )
+xsize = Size(1,1);
+ysize = Size(1,2);
+if x > xsize | y > ysize
+   number =0;
+else
+   number =1;
+end
+if x < 1 | y < 1
+    number = 0;
+else
+    number = 1;
+end
+if ceil(x) > xsize | ceil(y) > ysize
+    number = 0;
+else
+    number = 1;
 end
