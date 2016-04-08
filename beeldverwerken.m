@@ -3,7 +3,7 @@ function beeldverwerken
     %imshow(rotateImage('cameraman.tif', 0, 'linear'));
     im = imread('cameraman.tif');
     im = im2double(im);
-    rotated = rotateImage(im, 180, 'nearest');
+    rotated = rotateImage(im, 60, 'nearest');
     imshow(rotated)
 end
 
@@ -62,6 +62,12 @@ function color = pixelValue(image,x,y,method)
                 l = floor(y);              
                 a = x-k;
                 b = y-l;
+                if k < 1
+                    k = 1;
+                end
+                if l < 1
+                    l = 1;
+                end
                 color = (1-a)*(1-b)*im(k,l)...
                 +(1-a)*b*im(k,l+1)...
                 +a*b*im(k+1,l+1)...
