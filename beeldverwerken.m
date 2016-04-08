@@ -3,7 +3,7 @@ function beeldverwerken
     %imshow(rotateImage('cameraman.tif', 0, 'linear'));
     im = imread('cameraman.tif');
     im = im2double(im);
-    rotated = rotateImage(im, 30, 'nearest');
+    rotated = rotateImage(im, 180, 'nearest');
     imshow(rotated)
 end
 
@@ -75,6 +75,7 @@ end
 
 % Rotation
 function rotatedImage = rotateImage(image, angle, method)
+    angle = degtorad(angle);
     [imy, imx] = size(image);
     t1 = imx/2;
     t2 = imy/2;
