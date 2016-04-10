@@ -1,6 +1,35 @@
 % Main
 function beeldverwerken
-    rotateImage('cameraman.tif', 30, 'linear');
+    %imshow(rotateImage('cameraman.tif', 0, 'linear'));
+    im = imread('cameraman.tif');
+    im = im2double(im);
+%     degrees = 0;
+%     rotated = rotateImage(im, degrees, 'nearest');
+%     imshow(rotated)
+
+    cs = size(im);
+    v1 = [cs(1)/2-10,10];
+    v2 = [cs(1)/2-120, 100];
+    v3 = [cs(1)/2-20, 180];
+    v4 = v1 + (v3 - v2);
+    
+    xx1 = v1(1);
+    yy1 = v1(2);
+    xx2 = v2(1);
+    yy2 = v2(2);
+    xx3 = v4(1);
+    yy3 = v4(2);
+    
+    
+    transformed = myAffine(im, xx1, yy1, xx2, yy2, v3(1), yy3, 200, 200, 'linear');
+   
+    figure(1);
+    subplot(1, 3, 1);
+    imshow(transformed);
+    subplot(1, 3, 2);
+    imshow(im);
+    plotParallelogram(xx1, yy1, xx2, yy2, v3(1), v3(2));
+    
 end
 
 function interpolationPlot
@@ -14,32 +43,6 @@ function interpolationPlot
     hold off;
 end
 
-% Interpolation
-function color = pixelValue(image,x,y,method)
-    %im = imread(image);
-    im = image;
-    [height,width] = size(im);
-    if inImage(x,y,width,height)
-        switch(method)
-            case 'nearest'
-                nearestX = floor(x+0.5);
-                nearestY = floor(y+0.5);
-                color = im(nearestX,nearestY);
-                return;
-            case 'linear'
-                k = floor(x+0.5);
-                l = floor(y+0.5);
-                a = x-k;
-                b = y-l;
-                color = (1-a)*(1-b)*im(k,l)...
-                +(1-a)*b*im(k,l+1)...
-                +a*b*im(k+1,l+1)...
-                +a*(1-b)*im(k+1,l);               
-        end        
-    else 
-        color = -1;
-    end
-end
 
 % Check if point is inside image 
 function boolean = inImage(x1,y1,width,height)
@@ -55,24 +58,100 @@ function line = profile(image, x0, y0, x1, y1, n, method)
     end
 end
 
+function color = pixelValue(image,x,y,method)
+    %im = imread(image);
+    im = image;
+    [height,width] = size(im);
+    if inImage(x,y,width,height)
+        switch(method)
+            case 'nearest'
+                nearestX = floor(x+0.5);
+                nearestY = floor(y+0.5);
+                if nearestX < 1
+                    nearestX = 1;
+                end
+                if nearestY < 1
+                    nearestY = 1;
+                end
+                %disp([x,y,nearestX,nearestY])
+                if nearestX > width
+                    nearestX = width;
+                end
+                if nearestY > height
+                    nearestY = height;
+                end
+                color = im(nearestX,nearestY);
+                return
+            case 'linear'
+                k = floor(x);
+                l = floor(y);              
+                a = x-k;
+                b = y-l;
+                if k < 1
+                    k = 1;
+                end
+                if l < 1
+                    l = 1;
+                end
+                color = (1-a)*(1-b)*im(k,l)...
+                +(1-a)*b*im(k,l+1)...
+                +a*b*im(k+1,l+1)...
+                +a*(1-b)*im(k+1,l);               
+        end        
+    else 
+        %disp('huh')
+        color = 1;
+    end
+end
+
 % Rotation
 function rotatedImage = rotateImage(image, angle, method)
-    im = imread(image);
-
-    % image size
-    [image_x, image_y] = size(im);
-
-    % center
-    c = [image_x; image_y] / 2;
-
+    angle = degtorad(angle);
+    [imy, imx] = size(image);
+    t1 = imx/2;
+    t2 = imy/2;
     % rotation matrix
-    R = [cos(-angle), -sin(-angle), c(1); 
-        sin(-angle), cos(-angle), c(2); 
-        0, 0, 1]
-    
-    for x = 1:image_x
-        for y = 1:image
-       
+    R = [cos(angle), -sin(angle), t1; 
+         sin(angle), cos(angle), t2; 
+         0, 0, 1];
+    T = [1,0,-t1; 0,1,-t2; 0,0,1];
+    [X, Y] = meshgrid(1:imx,1:imy);
+    Indices = [X(:) Y(:)]';
+    Indices = [Indices; ones(1,length(Indices))];
+    Rotated = R*T*Indices;
+    %disp(Rotated)
+    for k=1:length(Rotated)
+        if Rotated(1,k)<= imx && Rotated(2,k) <= imy
+            color(k) = pixelValue(image, Rotated(2,k), Rotated(1,k),method);
+        else
+            color(k) = 0;
+        end
+    end
+    rotatedImage = reshape(color,imx,imy);
 end
+
+% Affine Transformation
+function r = myAffine(image, x1, y1, x2, y2, x3, y3, M, N, method)
+    r = zeros(N, M);
+    A = [0,0,1; N,0,1; 0,M,1]';
+    B = [x1, y1; x2, y2; x3, y3]';
+    X = B / A;
     
+    for xa = 1:M
+        for ya = 1:N
+            p = X * [ya,xa,1]';
+            y = p(1);
+            x = p(2);
+            r(xa, ya) = pixelValue(image, x, y, method);
+        end
+    end
+end
+
+function plotParallelogram(x1, y1, x2, y2, x3, y3)
+    hold on;
+    plot([x1, x2, x3, x3-x2+x1, x1], [y1, y2, y3, y1-y2+y3, y1], 'y', 'LineWidth', 2);
+    text(x1, y1, '1', 'Color', [0, 1, 0], 'FontSize', 18);
+    text(x2, y2, '2', 'Color', [0, 1, 0], 'FontSize', 18);
+    text(x3, y3, '3', 'Color', [0, 1, 0], 'FontSize', 18);
+end
 

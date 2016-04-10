@@ -3,8 +3,33 @@ function beeldverwerken
     %imshow(rotateImage('cameraman.tif', 0, 'linear'));
     im = imread('cameraman.tif');
     im = im2double(im);
-    rotated = rotateImage(im, 60, 'nearest');
-    imshow(rotated)
+%     degrees = 0;
+%     rotated = rotateImage(im, degrees, 'nearest');
+%     imshow(rotated)
+
+    % transformed points
+    imSize = size(im);
+    v1 = [imSize(1)/2-10,10];
+    v2 = [imSize(1)/2-120, 100];
+    v3 = [imSize(1)/2-20, 180];
+    v4 = v1 + (v3 - v2);
+    
+    % transform image
+    x1 = v1(1);
+    y1 = v1(2);
+    x2 = v2(1);
+    y2 = v2(2);
+    x3 = v4(1);
+    y3 = v4(2);
+    transformed = myAffine(im, x1, y1, x2, y2, x3, y3, 256, 256, 'linear');
+   
+    figure(1);
+    subplot(1, 3, 1);
+    imshow(transformed);
+    subplot(1, 3, 2);
+    imshow(im);
+    plotParallelogram(x1, y1, x2, y2, v3(1), v3(2));
+    
 end
 
 function interpolationPlot
@@ -105,5 +130,28 @@ function rotatedImage = rotateImage(image, angle, method)
     rotatedImage = reshape(color,imx,imy);
 end
 
+% Affine Transformation
+function r = myAffine(image, x1, y1, x2, y2, x3, y3, M, N, method)
+    r = zeros(N, M);
+    A = [0,0,1; N,0,1; 0,M,1]';
+    B = [x1, y1; x2, y2; x3, y3]';
+    X = B / A;
+    
+    for xa = 1:M
+        for ya = 1:N
+            p = X * [ya,xa,1]';
+            x = p(1);
+            y = p(2);
+            r(xa, ya) = pixelValue(image, x, y, method);
+        end
+    end
+end
 
+function plotParallelogram(x1, y1, x2, y2, x3, y3)
+    hold on;
+    plot([x1, x2, x3, x3-x2+x1, x1], [y1, y2, y3, y1-y2+y3, y1], 'y', 'LineWidth', 2);
+    text(x1, y1, '1', 'Color', [0, 1, 0], 'FontSize', 18);
+    text(x2, y2, '2', 'Color', [0, 1, 0], 'FontSize', 18);
+    text(x3, y3, '3', 'Color', [0, 1, 0], 'FontSize', 18);
+end
 
