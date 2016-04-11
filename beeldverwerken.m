@@ -1,7 +1,7 @@
 % LAB 1, 11-4-2016
 %
 % Authors:
-%   Steven de Weille, 
+%   Steven de Weille, 10606750
 %   Philip Bouman, 10668667
 
 %% Main
@@ -88,6 +88,12 @@ function beeldverwerken
     projection = myProjection(im, x1, y1, x2, y2, x3, y3, x4, y4, 150, 300, 'linear');
     figure(5);
     imshow(projection);
+    
+%% Question 7 
+% Creates projection matrix
+
+    load calibrationpoints;
+    estimatedprojection = estimateProjectionmatrix(xy, XYZ);
     
 end
 
@@ -255,4 +261,24 @@ function projection = myProjection(image, x1, y1, x2, y2, x3, y3, x4, y4, m, n, 
             projection(yIndex, xIndex) = pixelValue(image, x, y, method);  
         end
     end
+end
+
+% 7) estimated projection matrix
+function matrix = estimateProjectionmatrix(xy, XYZ)
+
+    x = xy(:, 1);
+    y = xy(:, 2);
+    X = XYZ(:, 1);
+    Y = XYZ(:, 2);
+    Z = XYZ(:, 3);
+    o = ones(size(x));
+    z = zeros(size(x));
+    Aoddrows = [X, Y, Z, o, z, z, z, z, -x.*X, -x.*Y, -x.*Z, -x];
+    Aevenrows = [z, z, z, z, X, Y, Z, o, -y.*X, -y.*Y, -y.*Z, -y];
+    A = [Aoddrows; Aevenrows];
+    
+    [U,S,V] = svd(A);
+    matrix = V(:,end);
+    matrix = reshape(matrix, 3, 4);
+    matrix = matrix';
 end
