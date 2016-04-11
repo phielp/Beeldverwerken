@@ -1,12 +1,24 @@
 % Main
 function beeldverwerken
     %imshow(rotateImage('cameraman.tif', 0, 'linear'));
+    
+%% Question 3
+% Rotates an image.
     im = imread('cameraman.tif');
     im = im2double(im);
-%     degrees = 0;
-%     rotated = rotateImage(im, degrees, 'nearest');
-%     imshow(rotated)
+    degrees = 45;
+    rotated = rotateImage(im, degrees, 'nearest');
+    figure(2);
+    imshow(rotated);
 
+
+%% Question 4 
+% Transforms a predefined parallelogram-shaped cut out
+% into a straightend square shape.
+
+    im = imread('cameraman.tif');
+    im = im2double(im);
+    
     % transformed points
     imSize = size(im);
     v1 = [imSize(1)/2-10,10];
@@ -23,12 +35,41 @@ function beeldverwerken
     y3 = v4(2);
     transformed = myAffine(im, x1, y1, x2, y2, x3, y3, 256, 256, 'linear');
    
-    figure(1);
+    figure(3);
     subplot(1, 3, 1);
     imshow(transformed);
     subplot(1, 3, 2);
     imshow(im);
     plotParallelogram(x1, y1, x2, y2, v3(1), v3(2));
+   
+%% Question 5
+% Prompts the user to select four points to project.
+% For correct results, please click in the following order:
+%   -top left corner
+%   -bottom left corner
+%   -top right corner
+%   -bottom right corner
+
+    figure(4);
+    im = imread('flyers.png');
+    im = imresize(im, 0.6);
+    im = im2double(im);
+    imshow(im);
+    
+    % store user selection
+    points = ginput(4);
+    x1 = points(1, 1);
+    y1 = points(1, 2);
+    x2 = points(2, 1);
+    y2 = points(2, 2);
+    x3 = points(3, 1);
+    y3 = points(3, 2);
+    x4 = points(4, 1);
+    y4 = points(4, 2);
+    
+    projection = myProjection(im, x1, y1, x2, y2, x3, y3, x4, y4, 150, 300, 'linear');
+    figure(3);
+    imshow(projection);
     
 end
 
@@ -43,6 +84,7 @@ function interpolationPlot
     hold off;
 end
 
+%% FUNCTIONS
 
 % Check if point is inside image 
 function boolean = inImage(x1,y1,width,height)
@@ -155,3 +197,46 @@ function plotParallelogram(x1, y1, x2, y2, x3, y3)
     text(x3, y3, '3', 'Color', [0, 1, 0], 'FontSize', 18);
 end
 
+function projMatrix = createProjectionMatrix(xy, uv)
+    
+    x = xy(:, 1);
+    y = xy(:, 2);
+    u = uv(:, 1);
+    v = uv(:, 2);
+    o = ones(size(x));
+    z = zeros(size(x));
+    Aoddrows = [x, y, o , z, z, z, -u.*x, -u.*y, -u];
+    Aevenrows = [z, z, z, x, y, o, -v.*x, -v.*y, -v];
+    A = [Aoddrows; Aevenrows];
+    
+    [U,S,V] = svd(A);
+    projMatrix = V(:,end);
+    projMatrix = reshape(projMatrix, 3, 3);
+    projMatrix = projMatrix';
+end
+
+function projection = myProjection(image, x1, y1, x2, y2, x3, y3, x4, y4, m, n, method)
+    % create empty matrix and fill coordinates
+    projection = zeros(n, m);
+    xy = [[0, 0]; [n, 0]; [0, m]; [n, m]];
+    uv = [[x1, y1]; [x2, y2]; [x3,y3]; [x4, y4]];
+      
+    % loop over projection matrix p
+    projectionMatrix = createProjectionMatrix(xy, uv);
+    for xIndex = 1:m
+        for yIndex = 1:n
+            
+            % projection
+            index = [yIndex, xIndex, 1]';
+            vec = projectionMatrix * index;
+            
+            % get real coordinates
+            vec = vec / vec(3);
+            x = vec(2);
+            y = vec(1);
+            
+            % get pixel values
+            projection(yIndex, xIndex) = pixelValue(image, x, y, method);  
+        end
+    end
+end
