@@ -1,6 +1,24 @@
-% Main
+% LAB 1, 11-4-2016
+%
+% Authors:
+%   Steven de Weille, 
+%   Philip Bouman, 10668667
+
+%% Main
+% Questions 2 - 7
 function beeldverwerken
-    %imshow(rotateImage('cameraman.tif', 0, 'linear'));
+%% Question 2
+% Two interpolation methods: nearesst neighbour en linear
+    im = imread('autumn.tif');
+    im = im2double(rgb2gray(im));
+    n = 100;
+    reset(gcf);
+    hold on;
+    figure(1);
+    plot(profile(im, 100, 100, 120, 120, n, 'linear'), 'b');
+    plot(profile(im, 100, 100, 120, 120, n, 'nearest'), 'r');
+    hold off;
+    
     
 %% Question 3
 % Rotates an image.
@@ -68,44 +86,20 @@ function beeldverwerken
     y4 = points(4, 2);
     
     projection = myProjection(im, x1, y1, x2, y2, x3, y3, x4, y4, 150, 300, 'linear');
-    figure(3);
+    figure(5);
     imshow(projection);
     
 end
 
-function interpolationPlot
-    a = imread('autumn.tif');
-    a = im2double(rgb2gray(a));
-    n = 100;
-    reset(gcf);
-    hold on;
-    plot(profile(a, 100, 100, 120, 120, n, 'linear'), 'b');
-    plot(profile(a, 100, 100, 120, 120, n, 'nearest'), 'r');
-    hold off;
-end
-
 %% FUNCTIONS
 
-% Check if point is inside image 
-function boolean = inImage(x1,y1,width,height)
-    boolean = ((x1 <= width) && (y1 <= height) && (height > 1) && (width > 1));
-end
-
-% Profile
-function line = profile(image, x0, y0, x1, y1, n, method)
-    x = linspace(x0, x1, n); 
-    y = linspace(y0, y1, n);
-    for i = 1:length(x)
-        line(i) = pixelValue(image, x(i), y(i), method);
-    end
-end
-
+% 2) Interpolation
 function color = pixelValue(image,x,y,method)
-    %im = imread(image);
     im = image;
     [height,width] = size(im);
     if inImage(x,y,width,height)
         switch(method)
+            % nearest-neighbour interpolation
             case 'nearest'
                 nearestX = floor(x+0.5);
                 nearestY = floor(y+0.5);
@@ -115,7 +109,6 @@ function color = pixelValue(image,x,y,method)
                 if nearestY < 1
                     nearestY = 1;
                 end
-                %disp([x,y,nearestX,nearestY])
                 if nearestX > width
                     nearestX = width;
                 end
@@ -124,6 +117,7 @@ function color = pixelValue(image,x,y,method)
                 end
                 color = im(nearestX,nearestY);
                 return
+            % bilinear interpolation    
             case 'linear'
                 k = floor(x);
                 l = floor(y);              
@@ -141,12 +135,25 @@ function color = pixelValue(image,x,y,method)
                 +a*(1-b)*im(k+1,l);               
         end        
     else 
-        %disp('huh')
         color = 1;
     end
 end
 
-% Rotation
+% 2) Check if point is inside image 
+function boolean = inImage(x1,y1,width,height)
+    boolean = ((x1 <= width) && (y1 <= height) && (height > 1) && (width > 1));
+end
+
+% 2) Image profile
+function line = profile(image, x0, y0, x1, y1, n, method)
+    x = linspace(x0, x1, n); 
+    y = linspace(y0, y1, n);
+    for i = 1:length(x)
+        line(i) = pixelValue(image, x(i), y(i), method);
+    end
+end
+
+% 3) Rotation
 function rotatedImage = rotateImage(image, angle, method)
     angle = degtorad(angle);
     [imy, imx] = size(image);
@@ -156,12 +163,13 @@ function rotatedImage = rotateImage(image, angle, method)
     R = [cos(angle), -sin(angle), t1; 
          sin(angle), cos(angle), t2; 
          0, 0, 1];
+    
     T = [1,0,-t1; 0,1,-t2; 0,0,1];
     [X, Y] = meshgrid(1:imx,1:imy);
     Indices = [X(:) Y(:)]';
     Indices = [Indices; ones(1,length(Indices))];
     Rotated = R*T*Indices;
-    %disp(Rotated)
+
     for k=1:length(Rotated)
         if Rotated(1,k)<= imx && Rotated(2,k) <= imy
             color(k) = pixelValue(image, Rotated(2,k), Rotated(1,k),method);
@@ -172,13 +180,15 @@ function rotatedImage = rotateImage(image, angle, method)
     rotatedImage = reshape(color,imx,imy);
 end
 
-% Affine Transformation
+% 4) Affine Transformation
 function r = myAffine(image, x1, y1, x2, y2, x3, y3, M, N, method)
     r = zeros(N, M);
+    % create transformation matrix
     A = [0,0,1; N,0,1; 0,M,1]';
     B = [x1, y1; x2, y2; x3, y3]';
     X = B / A;
     
+    % transform coordinates
     for xa = 1:M
         for ya = 1:N
             p = X * [ya,xa,1]';
@@ -189,6 +199,7 @@ function r = myAffine(image, x1, y1, x2, y2, x3, y3, M, N, method)
     end
 end
 
+% 4) plot parallelogram on the current axis
 function plotParallelogram(x1, y1, x2, y2, x3, y3)
     hold on;
     plot([x1, x2, x3, x3-x2+x1, x1], [y1, y2, y3, y1-y2+y3, y1], 'y', 'LineWidth', 2);
@@ -197,8 +208,9 @@ function plotParallelogram(x1, y1, x2, y2, x3, y3)
     text(x3, y3, '3', 'Color', [0, 1, 0], 'FontSize', 18);
 end
 
+% 5) Create a projection matrix
 function projMatrix = createProjectionMatrix(xy, uv)
-    
+    % code from assignment
     x = xy(:, 1);
     y = xy(:, 2);
     u = uv(:, 1);
@@ -209,19 +221,23 @@ function projMatrix = createProjectionMatrix(xy, uv)
     Aevenrows = [z, z, z, x, y, o, -v.*x, -v.*y, -v];
     A = [Aoddrows; Aevenrows];
     
-    [U,S,V] = svd(A);
+    % SVD to get projMatrix
+    [U,D,V] = svd(A);
     projMatrix = V(:,end);
+    
+    % reshape into correct dimensions
     projMatrix = reshape(projMatrix, 3, 3);
     projMatrix = projMatrix';
 end
 
+% 5) Projection
 function projection = myProjection(image, x1, y1, x2, y2, x3, y3, x4, y4, m, n, method)
     % create empty matrix and fill coordinates
     projection = zeros(n, m);
     xy = [[0, 0]; [n, 0]; [0, m]; [n, m]];
     uv = [[x1, y1]; [x2, y2]; [x3,y3]; [x4, y4]];
       
-    % loop over projection matrix p
+    % loop over projection matrix
     projectionMatrix = createProjectionMatrix(xy, uv);
     for xIndex = 1:m
         for yIndex = 1:n
