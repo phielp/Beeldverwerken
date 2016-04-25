@@ -6,6 +6,8 @@
 
 %% Main
 % Questions 2 - 7
+% run program command: beeldverwerken
+% all plots and figures will show
 function beeldverwerken
 %% Question 2
 % Two interpolation methods: nearesst neighbour en linear
