@@ -1,3 +1,9 @@
+% LAB 2, 25-4-2016
+%
+% Authors:
+%   Steven de Weille, 10606750
+%   Philip Bouman, 10668667
+
 function beeldverwerken2
     %% Theory question part 1
     % Read image
