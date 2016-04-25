@@ -41,5 +41,7 @@ function G = Gauss(S)
     y = -N : N;
     % create a sampling grid
     [X, Y] = meshgrid(x,y);
-    G = 1/((sigma*sqrt(2*pi)^2))*exp(-(X.^2+Y.^2)/(2*sigma^2));
+    G=exp(-X.^2/(2*sigma^2)-Y.^2/(2*sigma^2));
+    G=G./sum(G(:));
+    %G = 1/((sigma*sqrt(2*pi)^2))*exp(-(X.^2+Y.^2)/(2*sigma^2));
 end
